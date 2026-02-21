@@ -15,16 +15,13 @@ body {
     touch-action:none;
 }
 
-/* CAMERA */
 #camera {
     width:100vw;
     height:100vh;
     overflow:hidden;
     position:relative;
-    cursor:grab;
 }
 
-/* MAPPA */
 #map {
     position:absolute;
     width:2500px;
@@ -32,22 +29,18 @@ body {
     background:#f1f5f9;
     border:30px solid #111;
     transform-origin:0 0;
+    will-change: transform;
 }
 
-/* STANZE */
+/* ===== STANZE ===== */
+
 .room {
     position:absolute;
-    background:#d1d5db;
-    border:10px solid #111;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    cursor:pointer;
-    transition:0.2s;
+    background:#e5e7eb;
+    border:12px solid #111;
 }
 
-/* DISTRIBUZIONE */
+/* POSIZIONI */
 
 #a1 { top:100px; left:200px; width:500px; height:300px; }
 #a2 { top:120px; left:800px; width:400px; height:350px; }
@@ -65,6 +58,42 @@ body {
 #a4 { top:800px; left:200px; width:600px; height:400px; }
 #bagno { top:820px; left:900px; width:300px; height:250px; }
 #presidenza { top:820px; left:1300px; width:700px; height:350px; }
+
+/* ===== PORTA ===== */
+
+.door {
+    position:absolute;
+    width:80px;
+    height:160px;
+    background:#6b4f2a;
+    bottom:-12px;
+    left:50%;
+    transform-origin:left center;
+    transform:translateX(-50%) rotateY(0deg);
+    transition:transform 0.8s ease;
+    cursor:pointer;
+}
+
+.door.open {
+    transform:translateX(-50%) rotateY(-110deg);
+}
+
+/* effetto interno */
+.door::after {
+    content:"";
+    position:absolute;
+    right:10px;
+    top:50%;
+    width:10px;
+    height:10px;
+    background:#111;
+    border-radius:50%;
+}
+
+/* profondità */
+.room {
+    perspective:800px;
+}
 </style>
 </head>
 
@@ -73,15 +102,31 @@ body {
 <div id="camera">
     <div id="map">
 
-        <div id="a1" class="room">A1</div>
-        <div id="a2" class="room">A2</div>
-        <div id="a3" class="room">A3</div>
+        <div id="a1" class="room">
+            <div class="door"></div>
+        </div>
+
+        <div id="a2" class="room">
+            <div class="door"></div>
+        </div>
+
+        <div id="a3" class="room">
+            <div class="door"></div>
+        </div>
 
         <div id="corr1"></div>
 
-        <div id="a4" class="room">A4</div>
-        <div id="bagno" class="room">WC</div>
-        <div id="presidenza" class="room">PR</div>
+        <div id="a4" class="room">
+            <div class="door"></div>
+        </div>
+
+        <div id="bagno" class="room">
+            <div class="door"></div>
+        </div>
+
+        <div id="presidenza" class="room">
+            <div class="door"></div>
+        </div>
 
     </div>
 </div>
@@ -92,91 +137,82 @@ const camera = document.getElementById("camera");
 
 let scale = 1;
 let pos = { x: -500, y: -300 };
-let isDragging = false;
-let start = { x:0, y:0 };
+let velocity = { x: 0, y: 0 };
+let lastTouch = null;
 let initialDistance = null;
 
-updateTransform();
+/* ===== MOVIMENTO FLUIDO ===== */
 
-/* ===== DESKTOP DRAG ===== */
+function animate() {
+    pos.x += velocity.x;
+    pos.y += velocity.y;
+
+    velocity.x *= 0.92;
+    velocity.y *= 0.92;
+
+    map.style.transform =
+        `translate(${pos.x}px, ${pos.y}px) scale(${scale})`;
+
+    requestAnimationFrame(animate);
+}
+animate();
+
+/* DESKTOP DRAG */
 camera.addEventListener("mousedown", e => {
-    isDragging = true;
-    start.x = e.clientX - pos.x;
-    start.y = e.clientY - pos.y;
-    camera.style.cursor = "grabbing";
+    lastTouch = { x: e.clientX, y: e.clientY };
+    camera.onmousemove = ev => {
+        velocity.x = ev.clientX - lastTouch.x;
+        velocity.y = ev.clientY - lastTouch.y;
+        lastTouch = { x: ev.clientX, y: ev.clientY };
+    };
 });
 
 window.addEventListener("mouseup", () => {
-    isDragging = false;
-    camera.style.cursor = "grab";
+    camera.onmousemove = null;
 });
 
-window.addEventListener("mousemove", e => {
-    if (!isDragging) return;
-    pos.x = e.clientX - start.x;
-    pos.y = e.clientY - start.y;
-    updateTransform();
-});
-
-/* ===== DESKTOP ZOOM ===== */
+/* ZOOM */
 camera.addEventListener("wheel", e => {
     e.preventDefault();
-    const zoom = e.deltaY < 0 ? 1.1 : 0.9;
-    scale *= zoom;
+    scale *= e.deltaY < 0 ? 1.1 : 0.9;
     scale = Math.min(Math.max(scale, 0.4), 3);
-    updateTransform();
 });
 
-/* ===== MOBILE TOUCH DRAG ===== */
+/* TOUCH */
 camera.addEventListener("touchstart", e => {
     if (e.touches.length === 1) {
-        isDragging = true;
-        start.x = e.touches[0].clientX - pos.x;
-        start.y = e.touches[0].clientY - pos.y;
-    }
-
-    if (e.touches.length === 2) {
-        initialDistance = getDistance(e.touches[0], e.touches[1]);
+        lastTouch = {
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY
+        };
     }
 });
 
 camera.addEventListener("touchmove", e => {
     e.preventDefault();
-
-    if (e.touches.length === 1 && isDragging) {
-        pos.x = e.touches[0].clientX - start.x;
-        pos.y = e.touches[0].clientY - start.y;
-        updateTransform();
-    }
-
-    if (e.touches.length === 2) {
-        const newDistance = getDistance(e.touches[0], e.touches[1]);
-        if (initialDistance) {
-            let zoomFactor = newDistance / initialDistance;
-            scale *= zoomFactor;
-            scale = Math.min(Math.max(scale, 0.4), 3);
-            initialDistance = newDistance;
-            updateTransform();
-        }
+    if (e.touches.length === 1) {
+        velocity.x = e.touches[0].clientX - lastTouch.x;
+        velocity.y = e.touches[0].clientY - lastTouch.y;
+        lastTouch = {
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY
+        };
     }
 });
 
-camera.addEventListener("touchend", () => {
-    isDragging = false;
-    initialDistance = null;
+/* ===== ANIMAZIONE PORTA ===== */
+
+document.querySelectorAll(".door").forEach(door => {
+    door.addEventListener("click", e => {
+        e.stopPropagation();
+        door.classList.add("open");
+
+        setTimeout(() => {
+            alert("Entrato nella stanza");
+            door.classList.remove("open");
+        }, 900);
+    });
 });
-
-/* ===== HELPERS ===== */
-function getDistance(t1, t2) {
-    return Math.hypot(
-        t2.clientX - t1.clientX,
-        t2.clientY - t1.clientY
-    );
-}
-
-function updateTransform() {
-    map.style.transform = `translate(${pos.x}px, ${pos.y}px) scale(${scale})`;
-}
 </script>
 
 </body>
