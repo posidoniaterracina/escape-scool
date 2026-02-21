@@ -3,157 +3,202 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Escape School - Planimetria</title>
+<title>Escape School</title>
 
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 
 body {
-    overflow:hidden;
     background:#0f172a;
-    font-family:Arial;
+    overflow:hidden;
+    font-family:Arial, sans-serif;
 }
 
-#camera {
+/* ===== GAME AREA ===== */
+
+#game {
+    position:relative;
     width:100vw;
     height:100vh;
+    background:#111827;
     overflow:hidden;
-    position:relative;
-    cursor:grab;
 }
 
-#map {
+/* ===== MAPPA ===== */
+
+.tile {
     position:absolute;
-    width:2200px;
-    height:1400px;
-    background:white;
-    transform-origin:0 0;
 }
 
-/* ===== MURI ===== */
-
-.room {
-    position:absolute;
-    background:white;
-    border:16px solid black;
+.wall {
+    background:#1f2937;
 }
 
-/* ===== DISTRIBUZIONE PLANIMETRICA ===== */
+.floor {
+    background:#374151;
+}
 
-#a1 { top:100px; left:200px; width:500px; height:300px; }
-#a2 { top:100px; left:700px; width:500px; height:300px; }
-#a3 { top:100px; left:1200px; width:500px; height:300px; }
+.roomTile {
+    background:#4b5563;
+}
 
-#corr {
+/* ===== PLAYER ===== */
+
+#player {
     position:absolute;
-    top:400px;
-    left:200px;
-    width:1500px;
+    width:28px;
+    height:28px;
+    background:#22d3ee;
+    border-radius:8px;
+    transition:transform 0.05s linear;
+}
+
+/* ===== D-PAD ===== */
+
+#dpad {
+    position:absolute;
+    bottom:30px;
+    left:50%;
+    transform:translateX(-50%);
+    width:200px;
     height:200px;
-    border-top:16px solid black;
-    border-bottom:16px solid black;
 }
 
-#a4 { top:600px; left:200px; width:600px; height:400px; }
-#bagno { top:600px; left:800px; width:300px; height:300px; }
-#presidenza { top:600px; left:1100px; width:600px; height:400px; }
-
-/* ===== PORTE IN PIANTA ===== */
-
-.door {
+.dbtn {
     position:absolute;
-    width:120px;
-    height:120px;
-    border:4px solid black;
-    border-left:none;
-    border-bottom:none;
-    background:transparent;
-    transform-origin:0 100%;
-    transform:rotate(0deg);
-    transition:transform 0.6s ease;
-    cursor:pointer;
+    width:60px;
+    height:60px;
+    background:#1f2937;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:white;
+    font-size:24px;
+    user-select:none;
 }
 
-.door.open {
-    transform:rotate(-90deg);
+.dbtn:active {
+    background:#22d3ee;
 }
 
-/* POSIZIONAMENTO PORTE */
-
-#a1 .door { bottom:-16px; left:180px; }
-#a2 .door { bottom:-16px; left:180px; }
-#a3 .door { bottom:-16px; left:180px; }
-
-#a4 .door { top:-16px; left:250px; }
-#bagno .door { top:-16px; left:90px; }
-#presidenza .door { top:-16px; left:250px; }
+#up { top:0; left:70px; }
+#down { bottom:0; left:70px; }
+#left { left:0; top:70px; }
+#right { right:0; top:70px; }
 
 </style>
 </head>
-
 <body>
 
-<div id="camera">
-    <div id="map">
-
-        <div id="a1" class="room"><div class="door"></div></div>
-        <div id="a2" class="room"><div class="door"></div></div>
-        <div id="a3" class="room"><div class="door"></div></div>
-
-        <div id="corr"></div>
-
-        <div id="a4" class="room"><div class="door"></div></div>
-        <div id="bagno" class="room"><div class="door"></div></div>
-        <div id="presidenza" class="room"><div class="door"></div></div>
-
+<div id="game">
+    <div id="player"></div>
+    <div id="dpad">
+        <div class="dbtn" id="up">↑</div>
+        <div class="dbtn" id="down">↓</div>
+        <div class="dbtn" id="left">←</div>
+        <div class="dbtn" id="right">→</div>
     </div>
 </div>
 
 <script>
-const map = document.getElementById("map");
-const camera = document.getElementById("camera");
+const game = document.getElementById("game");
+const player = document.getElementById("player");
 
-let scale = 1;
-let pos = { x: -300, y: -200 };
-let velocity = { x: 0, y: 0 };
-let last = null;
+const TILE = 40;
+const mapData = [
+"############################",
+"#............##.............#",
+"#............##.............#",
+"#............##.............#",
+"#...........................#",
+"#............#######........#",
+"#...........................#",
+"#......######...............#",
+"#...........................#",
+"#............##.............#",
+"#............##.............#",
+"############################"
+];
 
-function animate() {
-    pos.x += velocity.x;
-    pos.y += velocity.y;
-    velocity.x *= 0.92;
-    velocity.y *= 0.92;
-    map.style.transform =
-        `translate(${pos.x}px, ${pos.y}px) scale(${scale})`;
-    requestAnimationFrame(animate);
-}
-animate();
+let mapWidth = mapData[0].length;
+let mapHeight = mapData.length;
 
-/* DRAG */
-camera.addEventListener("mousedown", e => {
-    last = { x:e.clientX, y:e.clientY };
-    camera.onmousemove = ev => {
-        velocity.x = ev.clientX - last.x;
-        velocity.y = ev.clientY - last.y;
-        last = { x:ev.clientX, y:ev.clientY };
-    };
-});
-window.addEventListener("mouseup", () => camera.onmousemove = null);
+let playerPos = { x: 2, y: 2 };
+let direction = null;
 
-/* ZOOM */
-camera.addEventListener("wheel", e => {
-    e.preventDefault();
-    scale *= e.deltaY < 0 ? 1.1 : 0.9;
-    scale = Math.min(Math.max(scale, 0.4), 3);
-});
+/* ===== CREA MAPPA ===== */
 
-/* APERTURA PORTA */
-document.querySelectorAll(".door").forEach(d => {
-    d.addEventListener("click", e => {
-        e.stopPropagation();
-        d.classList.toggle("open");
+mapData.forEach((row,y)=>{
+    row.split("").forEach((cell,x)=>{
+        const tile = document.createElement("div");
+        tile.classList.add("tile");
+        tile.style.width = TILE+"px";
+        tile.style.height = TILE+"px";
+        tile.style.left = x*TILE+"px";
+        tile.style.top = y*TILE+"px";
+
+        if(cell === "#") tile.classList.add("wall");
+        else tile.classList.add("floor");
+
+        game.appendChild(tile);
     });
 });
+
+updatePlayer();
+
+/* ===== MOVIMENTO ===== */
+
+function movePlayer() {
+    if(!direction) return;
+
+    let newX = playerPos.x;
+    let newY = playerPos.y;
+
+    if(direction === "up") newY--;
+    if(direction === "down") newY++;
+    if(direction === "left") newX--;
+    if(direction === "right") newX++;
+
+    if(mapData[newY][newX] !== "#") {
+        playerPos.x = newX;
+        playerPos.y = newY;
+    }
+
+    updatePlayer();
+}
+
+function updatePlayer() {
+    player.style.left = playerPos.x * TILE + 6 + "px";
+    player.style.top = playerPos.y * TILE + 6 + "px";
+}
+
+/* ===== GAME LOOP ===== */
+
+setInterval(movePlayer, 150);
+
+/* ===== CONTROLLI TOUCH ===== */
+
+document.querySelectorAll(".dbtn").forEach(btn=>{
+    btn.addEventListener("touchstart", ()=>{
+        direction = btn.id;
+    });
+    btn.addEventListener("touchend", ()=>{
+        direction = null;
+    });
+});
+
+/* ===== CONTROLLI TASTIERA ===== */
+
+window.addEventListener("keydown", e=>{
+    if(e.key==="ArrowUp") direction="up";
+    if(e.key==="ArrowDown") direction="down";
+    if(e.key==="ArrowLeft") direction="left";
+    if(e.key==="ArrowRight") direction="right";
+});
+
+window.addEventListener("keyup", ()=> direction=null);
+
 </script>
 
 </body>
