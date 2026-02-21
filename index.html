@@ -2,62 +2,45 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Scuola di Fuga - SIA Escape</title>
+    <title>Escape School - SIA</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
-    <header>
-        <h1>🏫 Scuola di Fuga</h1>
-        <div id="player-status">
-            <span>Punti: <strong id="punti">0</strong></span>
-            <span>Debiti: <strong id="debiti">4</strong></span>
-        </div>
-    </header>
+<header>
+    <h1>🏫 Escape School</h1>
+    <div id="player-status">
+        <span>Punti: <strong id="punti">0</strong></span>
+        <span>Debiti: <strong id="debiti">4</strong></span>
+    </div>
+</header>
 
-    <!-- MAPPA -->
-    <main id="map-view">
-        <h2>Scegli un'aula per recuperare il debito</h2>
+<!-- MAPPA -->
+<main id="map-view">
+    <h2>Esplora la scuola</h2>
+    <div id="floor-plan"></div>
+</main>
 
-        <div class="map-container">
+<!-- AULA -->
+<section id="room-view" class="hidden">
+    <h2 id="room-title"></h2>
+    <div id="question-container"></div>
+    <button id="back-to-map">⬅ Torna alla mappa</button>
+</section>
 
-            <button class="room" data-room="informatica">
-                💻 Informatica
-            </button>
+<!-- RISULTATO -->
+<section id="result-view" class="hidden">
+    <h2 id="final-message"></h2>
+    <button onclick="location.reload()">Ricomincia</button>
+</section>
 
-            <button class="room" data-room="economia">
-                📊 Economia Aziendale
-            </button>
-
-            <button class="room" data-room="diritto">
-                ⚖️ Diritto
-            </button>
-
-            <button class="room" data-room="inglese">
-                🇬🇧 Inglese
-            </button>
-
-        </div>
-    </main>
-
-    <!-- AULA -->
-    <section id="room-view" class="hidden">
-        <h2 id="room-title"></h2>
-        <div id="question-container"></div>
-        <button id="back-to-map">⬅ Torna alla mappa</button>
-    </section>
-
-    <!-- RISULTATO FINALE -->
-    <section id="result-view" class="hidden">
-        <h2 id="final-message"></h2>
-        <button onclick="location.reload()">Ricomincia</button>
-    </section>
-
-    <script src="js/data.js"></script>
-    <script src="js/engine.js"></script>
-    <script src="js/app.js"></script>
+<!-- Script (ordine importante) -->
+<script src="js/data.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/app.js"></script>
 
 </body>
 </html>
