@@ -8,197 +8,197 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 
-body {
+body{
     background:#0f172a;
+    font-family:Arial, Helvetica, sans-serif;
     overflow:hidden;
-    font-family:Arial, sans-serif;
+    color:white;
 }
 
-/* ===== GAME AREA ===== */
-
-#game {
-    position:relative;
-    width:100vw;
-    height:100vh;
+/* HEADER */
+header{
+    position:fixed;
+    top:0;
+    width:100%;
+    height:60px;
     background:#111827;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 20px;
+    z-index:100;
+    box-shadow:0 4px 20px rgba(0,0,0,.4);
+}
+
+/* GAME AREA */
+#game-wrapper{
+    position:absolute;
+    top:60px;
+    width:100vw;
+    height:calc(100vh - 60px);
     overflow:hidden;
 }
 
-/* ===== MAPPA ===== */
-
-.tile {
+#camera{
     position:absolute;
+    width:2000px;
+    height:1200px;
+    transition:transform .08s linear;
 }
 
-.wall {
-    background:#1f2937;
-}
-
-.floor {
-    background:#374151;
-}
-
-.roomTile {
-    background:#4b5563;
-}
-
-/* ===== PLAYER ===== */
-
-#player {
+/* FLOOR */
+.floor{
     position:absolute;
-    width:28px;
-    height:28px;
-    background:#22d3ee;
-    border-radius:8px;
-    transition:transform 0.05s linear;
+    width:100%;
+    height:100%;
+    background:
+        repeating-linear-gradient(
+            45deg,
+            #1e293b,
+            #1e293b 40px,
+            #1a2535 40px,
+            #1a2535 80px
+        );
 }
 
-/* ===== D-PAD ===== */
-
-#dpad {
+/* WALLS */
+.wall{
     position:absolute;
+    background:#334155;
+    box-shadow:
+        inset -4px -4px 8px rgba(0,0,0,.4),
+        inset 4px 4px 8px rgba(255,255,255,.03);
+}
+
+/* PLAYER */
+#player{
+    position:absolute;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:#3b82f6;
+    box-shadow:
+        0 0 15px #3b82f6,
+        inset -3px -3px 6px rgba(0,0,0,.5);
+}
+
+#shadow{
+    position:absolute;
+    width:36px;
+    height:12px;
+    background:rgba(0,0,0,.5);
+    border-radius:50%;
+    filter:blur(4px);
+}
+
+/* MOBILE CONTROLS */
+#controls{
+    position:fixed;
     bottom:30px;
     left:50%;
     transform:translateX(-50%);
     width:200px;
     height:200px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(3,1fr);
+    gap:10px;
 }
 
-.dbtn {
-    position:absolute;
-    width:60px;
-    height:60px;
-    background:#1f2937;
+.ctrl{
+    background:rgba(255,255,255,.05);
     border-radius:12px;
     display:flex;
     align-items:center;
     justify-content:center;
-    color:white;
-    font-size:24px;
-    user-select:none;
+    font-size:22px;
+    backdrop-filter:blur(6px);
+    box-shadow:0 4px 10px rgba(0,0,0,.4);
 }
 
-.dbtn:active {
-    background:#22d3ee;
+.ctrl:active{
+    background:#3b82f6;
 }
-
-#up { top:0; left:70px; }
-#down { bottom:0; left:70px; }
-#left { left:0; top:70px; }
-#right { right:0; top:70px; }
-
 </style>
 </head>
+
 <body>
 
-<div id="game">
-    <div id="player"></div>
-    <div id="dpad">
-        <div class="dbtn" id="up">↑</div>
-        <div class="dbtn" id="down">↓</div>
-        <div class="dbtn" id="left">←</div>
-        <div class="dbtn" id="right">→</div>
+<header>
+    <div>🏫 Escape School</div>
+    <div>Punti: 0 | Debiti: 4</div>
+</header>
+
+<div id="game-wrapper">
+    <div id="camera">
+        <div class="floor"></div>
+
+        <!-- CORRIDOI -->
+        <div class="wall" style="top:300px; left:0; width:2000px; height:40px;"></div>
+        <div class="wall" style="top:700px; left:0; width:2000px; height:40px;"></div>
+        <div class="wall" style="left:900px; top:0; width:40px; height:1200px;"></div>
+
+        <!-- PLAYER -->
+        <div id="shadow"></div>
+        <div id="player"></div>
+
     </div>
 </div>
 
+<!-- MOBILE D-PAD -->
+<div id="controls">
+    <div></div>
+    <div class="ctrl" id="up">⬆</div>
+    <div></div>
+    <div class="ctrl" id="left">⬅</div>
+    <div></div>
+    <div class="ctrl" id="right">➡</div>
+    <div></div>
+    <div class="ctrl" id="down">⬇</div>
+    <div></div>
+</div>
+
 <script>
-const game = document.getElementById("game");
 const player = document.getElementById("player");
+const shadow = document.getElementById("shadow");
+const camera = document.getElementById("camera");
 
-const TILE = 40;
-const mapData = [
-"############################",
-"#............##.............#",
-"#............##.............#",
-"#............##.............#",
-"#...........................#",
-"#............#######........#",
-"#...........................#",
-"#......######...............#",
-"#...........................#",
-"#............##.............#",
-"#............##.............#",
-"############################"
-];
+let x = 400;
+let y = 400;
+const speed = 4;
 
-let mapWidth = mapData[0].length;
-let mapHeight = mapData.length;
+function update(){
+    player.style.left = x + "px";
+    player.style.top = y + "px";
 
-let playerPos = { x: 2, y: 2 };
-let direction = null;
+    shadow.style.left = x - 2 + "px";
+    shadow.style.top = y + 24 + "px";
 
-/* ===== CREA MAPPA ===== */
-
-mapData.forEach((row,y)=>{
-    row.split("").forEach((cell,x)=>{
-        const tile = document.createElement("div");
-        tile.classList.add("tile");
-        tile.style.width = TILE+"px";
-        tile.style.height = TILE+"px";
-        tile.style.left = x*TILE+"px";
-        tile.style.top = y*TILE+"px";
-
-        if(cell === "#") tile.classList.add("wall");
-        else tile.classList.add("floor");
-
-        game.appendChild(tile);
-    });
-});
-
-updatePlayer();
-
-/* ===== MOVIMENTO ===== */
-
-function movePlayer() {
-    if(!direction) return;
-
-    let newX = playerPos.x;
-    let newY = playerPos.y;
-
-    if(direction === "up") newY--;
-    if(direction === "down") newY++;
-    if(direction === "left") newX--;
-    if(direction === "right") newX++;
-
-    if(mapData[newY][newX] !== "#") {
-        playerPos.x = newX;
-        playerPos.y = newY;
-    }
-
-    updatePlayer();
+    camera.style.transform =
+        `translate(${-x + window.innerWidth/2 -16}px, ${-y + window.innerHeight/2 -60}px)`;
 }
 
-function updatePlayer() {
-    player.style.left = playerPos.x * TILE + 6 + "px";
-    player.style.top = playerPos.y * TILE + 6 + "px";
+function move(dx,dy){
+    x += dx;
+    y += dy;
+    update();
 }
 
-/* ===== GAME LOOP ===== */
+/* CONTROLLI MOBILE */
+document.getElementById("up").ontouchstart = ()=> move(0,-speed);
+document.getElementById("down").ontouchstart = ()=> move(0,speed);
+document.getElementById("left").ontouchstart = ()=> move(-speed,0);
+document.getElementById("right").ontouchstart = ()=> move(speed,0);
 
-setInterval(movePlayer, 150);
-
-/* ===== CONTROLLI TOUCH ===== */
-
-document.querySelectorAll(".dbtn").forEach(btn=>{
-    btn.addEventListener("touchstart", ()=>{
-        direction = btn.id;
-    });
-    btn.addEventListener("touchend", ()=>{
-        direction = null;
-    });
+/* CONTROLLI TASTIERA */
+document.addEventListener("keydown", e=>{
+    if(e.key==="ArrowUp") move(0,-speed);
+    if(e.key==="ArrowDown") move(0,speed);
+    if(e.key==="ArrowLeft") move(-speed,0);
+    if(e.key==="ArrowRight") move(speed,0);
 });
 
-/* ===== CONTROLLI TASTIERA ===== */
-
-window.addEventListener("keydown", e=>{
-    if(e.key==="ArrowUp") direction="up";
-    if(e.key==="ArrowDown") direction="down";
-    if(e.key==="ArrowLeft") direction="left";
-    if(e.key==="ArrowRight") direction="right";
-});
-
-window.addEventListener("keyup", ()=> direction=null);
-
+update();
 </script>
 
 </body>
