@@ -1,22 +1,23 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-    aggiornaStatus();
+    const floorPlan = document.getElementById("floor-plan");
 
-    const bottoniAule = document.querySelectorAll(".room");
+    ambienti.forEach(function (ambiente) {
 
-    bottoniAule.forEach(bottone => {
-        bottone.addEventListener("click", function () {
-            const nomeAula = this.dataset.room;
-            entraInAula(nomeAula);
-        });
+        const stanza = document.createElement("div");
+        stanza.classList.add("room");
+        stanza.classList.add(ambiente.tipo);
+
+        stanza.textContent = ambiente.id.toUpperCase();
+
+        if (ambiente.tipo === "materia") {
+            stanza.addEventListener("click", function () {
+                entraInAula(ambiente.materia);
+            });
+        }
+
+        floorPlan.appendChild(stanza);
+
     });
 
-    document.getElementById("back-to-map")
-        .addEventListener("click", function () {
-            document.getElementById("room-view").classList.add("hidden");
-            document.getElementById("map-view").classList.remove("hidden");
-        });
-
 });
-    }
-}
