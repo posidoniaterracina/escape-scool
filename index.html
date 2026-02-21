@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Escape School</title>
+<title>Escape School - Planimetria</title>
 
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -12,7 +12,6 @@ body {
     overflow:hidden;
     background:#0f172a;
     font-family:Arial;
-    touch-action:none;
 }
 
 #camera {
@@ -20,80 +19,75 @@ body {
     height:100vh;
     overflow:hidden;
     position:relative;
+    cursor:grab;
 }
 
 #map {
     position:absolute;
-    width:2500px;
-    height:1600px;
-    background:#f1f5f9;
-    border:30px solid #111;
+    width:2200px;
+    height:1400px;
+    background:white;
     transform-origin:0 0;
-    will-change: transform;
 }
 
-/* ===== STANZE ===== */
+/* ===== MURI ===== */
 
 .room {
     position:absolute;
-    background:#e5e7eb;
-    border:12px solid #111;
+    background:white;
+    border:16px solid black;
 }
 
-/* POSIZIONI */
+/* ===== DISTRIBUZIONE PLANIMETRICA ===== */
 
 #a1 { top:100px; left:200px; width:500px; height:300px; }
-#a2 { top:120px; left:800px; width:400px; height:350px; }
-#a3 { top:150px; left:1400px; width:600px; height:280px; }
+#a2 { top:100px; left:700px; width:500px; height:300px; }
+#a3 { top:100px; left:1200px; width:500px; height:300px; }
 
-#corr1 {
+#corr {
     position:absolute;
-    top:500px;
-    left:0;
-    width:100%;
+    top:400px;
+    left:200px;
+    width:1500px;
     height:200px;
-    background:#9ca3af;
+    border-top:16px solid black;
+    border-bottom:16px solid black;
 }
 
-#a4 { top:800px; left:200px; width:600px; height:400px; }
-#bagno { top:820px; left:900px; width:300px; height:250px; }
-#presidenza { top:820px; left:1300px; width:700px; height:350px; }
+#a4 { top:600px; left:200px; width:600px; height:400px; }
+#bagno { top:600px; left:800px; width:300px; height:300px; }
+#presidenza { top:600px; left:1100px; width:600px; height:400px; }
 
-/* ===== PORTA ===== */
+/* ===== PORTE IN PIANTA ===== */
 
 .door {
     position:absolute;
-    width:80px;
-    height:160px;
-    background:#6b4f2a;
-    bottom:-12px;
-    left:50%;
-    transform-origin:left center;
-    transform:translateX(-50%) rotateY(0deg);
-    transition:transform 0.8s ease;
+    width:120px;
+    height:120px;
+    border:4px solid black;
+    border-left:none;
+    border-bottom:none;
+    background:transparent;
+    transform-origin:0 100%;
+    transform:rotate(0deg);
+    transition:transform 0.6s ease;
     cursor:pointer;
 }
 
 .door.open {
-    transform:translateX(-50%) rotateY(-110deg);
+    transform:rotate(-90deg);
 }
 
-/* effetto interno */
-.door::after {
-    content:"";
-    position:absolute;
-    right:10px;
-    top:50%;
-    width:10px;
-    height:10px;
-    background:#111;
-    border-radius:50%;
-}
+/* POSIZIONAMENTO PORTE */
 
-/* profondità */
-.room {
-    perspective:800px;
-}
+#a1 .door { bottom:-16px; left:180px; }
+#a2 .door { bottom:-16px; left:180px; }
+#a3 .door { bottom:-16px; left:180px; }
+
+#a4 .door { top:-16px; left:250px; }
+#bagno .door { top:-16px; left:90px; }
+#presidenza .door { top:-16px; left:250px; }
+
 </style>
 </head>
 
@@ -102,31 +96,15 @@ body {
 <div id="camera">
     <div id="map">
 
-        <div id="a1" class="room">
-            <div class="door"></div>
-        </div>
+        <div id="a1" class="room"><div class="door"></div></div>
+        <div id="a2" class="room"><div class="door"></div></div>
+        <div id="a3" class="room"><div class="door"></div></div>
 
-        <div id="a2" class="room">
-            <div class="door"></div>
-        </div>
+        <div id="corr"></div>
 
-        <div id="a3" class="room">
-            <div class="door"></div>
-        </div>
-
-        <div id="corr1"></div>
-
-        <div id="a4" class="room">
-            <div class="door"></div>
-        </div>
-
-        <div id="bagno" class="room">
-            <div class="door"></div>
-        </div>
-
-        <div id="presidenza" class="room">
-            <div class="door"></div>
-        </div>
+        <div id="a4" class="room"><div class="door"></div></div>
+        <div id="bagno" class="room"><div class="door"></div></div>
+        <div id="presidenza" class="room"><div class="door"></div></div>
 
     </div>
 </div>
@@ -136,40 +114,31 @@ const map = document.getElementById("map");
 const camera = document.getElementById("camera");
 
 let scale = 1;
-let pos = { x: -500, y: -300 };
+let pos = { x: -300, y: -200 };
 let velocity = { x: 0, y: 0 };
-let lastTouch = null;
-let initialDistance = null;
-
-/* ===== MOVIMENTO FLUIDO ===== */
+let last = null;
 
 function animate() {
     pos.x += velocity.x;
     pos.y += velocity.y;
-
     velocity.x *= 0.92;
     velocity.y *= 0.92;
-
     map.style.transform =
         `translate(${pos.x}px, ${pos.y}px) scale(${scale})`;
-
     requestAnimationFrame(animate);
 }
 animate();
 
-/* DESKTOP DRAG */
+/* DRAG */
 camera.addEventListener("mousedown", e => {
-    lastTouch = { x: e.clientX, y: e.clientY };
+    last = { x:e.clientX, y:e.clientY };
     camera.onmousemove = ev => {
-        velocity.x = ev.clientX - lastTouch.x;
-        velocity.y = ev.clientY - lastTouch.y;
-        lastTouch = { x: ev.clientX, y: ev.clientY };
+        velocity.x = ev.clientX - last.x;
+        velocity.y = ev.clientY - last.y;
+        last = { x:ev.clientX, y:ev.clientY };
     };
 });
-
-window.addEventListener("mouseup", () => {
-    camera.onmousemove = null;
-});
+window.addEventListener("mouseup", () => camera.onmousemove = null);
 
 /* ZOOM */
 camera.addEventListener("wheel", e => {
@@ -178,39 +147,11 @@ camera.addEventListener("wheel", e => {
     scale = Math.min(Math.max(scale, 0.4), 3);
 });
 
-/* TOUCH */
-camera.addEventListener("touchstart", e => {
-    if (e.touches.length === 1) {
-        lastTouch = {
-            x: e.touches[0].clientX,
-            y: e.touches[0].clientY
-        };
-    }
-});
-
-camera.addEventListener("touchmove", e => {
-    e.preventDefault();
-    if (e.touches.length === 1) {
-        velocity.x = e.touches[0].clientX - lastTouch.x;
-        velocity.y = e.touches[0].clientY - lastTouch.y;
-        lastTouch = {
-            x: e.touches[0].clientX,
-            y: e.touches[0].clientY
-        };
-    }
-});
-
-/* ===== ANIMAZIONE PORTA ===== */
-
-document.querySelectorAll(".door").forEach(door => {
-    door.addEventListener("click", e => {
+/* APERTURA PORTA */
+document.querySelectorAll(".door").forEach(d => {
+    d.addEventListener("click", e => {
         e.stopPropagation();
-        door.classList.add("open");
-
-        setTimeout(() => {
-            alert("Entrato nella stanza");
-            door.classList.remove("open");
-        }, 900);
+        d.classList.toggle("open");
     });
 });
 </script>
