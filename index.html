@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Escape School - SIA</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <link rel="stylesheet" href="css/style.css">
 </head>
 
@@ -18,26 +17,50 @@
     </div>
 </header>
 
-<!-- MAPPA -->
+<!-- ================= MAPPA ================= -->
 <main id="map-view">
+
     <h2>Esplora la scuola</h2>
-    <div id="floor-plan"></div>
+
+    <div class="school-container">
+
+        <!-- PIANO SUPERIORE -->
+        <div class="row top-row">
+            <div class="room" data-room="aula1">A1</div>
+            <div class="room" data-room="aula2">A2</div>
+            <div class="room" data-room="aula3">A3</div>
+        </div>
+
+        <!-- CORRIDOIO -->
+        <div class="corridor">
+            CORRIDOIO CENTRALE
+        </div>
+
+        <!-- PIANO INFERIORE -->
+        <div class="row bottom-row">
+            <div class="room" data-room="aula4">A4</div>
+            <div class="room" data-room="bagno1">WC</div>
+            <div class="room" data-room="presidenza">PR</div>
+        </div>
+
+    </div>
+
 </main>
 
-<!-- AULA -->
+<!-- ================= AULA ================= -->
 <section id="room-view" class="hidden">
     <h2 id="room-title"></h2>
     <div id="question-container"></div>
     <button id="back-to-map">⬅ Torna alla mappa</button>
 </section>
 
-<!-- RISULTATO -->
+<!-- ================= RISULTATO ================= -->
 <section id="result-view" class="hidden">
     <h2 id="final-message"></h2>
     <button onclick="location.reload()">Ricomincia</button>
 </section>
 
-<!-- Script (ordine importante) -->
+<!-- ================= SCRIPT ================= -->
 <script src="js/data.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/app.js"></script>
