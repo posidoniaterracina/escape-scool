@@ -6,94 +6,69 @@
 <title>Escape School</title>
 
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+* { margin:0; padding:0; box-sizing:border-box; }
 
 body {
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-    background: #0f172a;
-    color: white;
+    overflow:hidden;
+    background:#0f172a;
+    font-family:Arial;
 }
 
-/* ===== CAMERA ===== */
-
+/* CAMERA */
 #camera {
-    position: absolute;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
+    width:100vw;
+    height:100vh;
+    overflow:hidden;
+    position:relative;
+    cursor:grab;
 }
 
-/* ===== MAPPA ===== */
-
+/* MAPPA */
 #map {
-    position: absolute;
-    width: 1400px;
-    height: 900px;
-    background: #e5e7eb;
-    border: 20px solid #111;
-    transform-origin: center center;
-    transition: transform 0.8s ease;
+    position:absolute;
+    width:2500px;
+    height:1600px;
+    background:#f1f5f9;
+    border:30px solid #111;
+    transform-origin:0 0;
 }
 
-/* ===== STANZE ===== */
-
+/* STANZE */
 .room {
-    position: absolute;
-    background: #d1d5db;
-    border: 8px solid #111;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
+    position:absolute;
+    background:#d1d5db;
+    border:10px solid #111;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.2s;
 }
 
 .room:hover {
-    background: #cbd5e1;
+    background:#cbd5e1;
 }
 
-/* POSIZIONI REALISTICHE */
+/* DISTRIBUZIONE IRREGOLARE */
 
-#a1 { top: 0; left: 0; width: 400px; height: 250px; }
-#a2 { top: 0; left: 400px; width: 400px; height: 250px; }
-#a3 { top: 0; left: 800px; width: 400px; height: 250px; }
+#a1 { top:100px; left:200px; width:500px; height:300px; }
+#a2 { top:120px; left:800px; width:400px; height:350px; }
+#a3 { top:150px; left:1400px; width:600px; height:280px; }
 
-#corridor {
-    position: absolute;
-    top: 250px;
-    left: 0;
-    width: 100%;
-    height: 200px;
-    background: #9ca3af;
-    border-top: 8px solid #111;
-    border-bottom: 8px solid #111;
+#corr1 {
+    position:absolute;
+    top:500px;
+    left:0;
+    width:100%;
+    height:200px;
+    background:#9ca3af;
 }
 
-#a4 { top: 450px; left: 0; width: 500px; height: 300px; }
-#bagno { top: 450px; left: 500px; width: 300px; height: 300px; }
-#presidenza { top: 450px; left: 800px; width: 400px; height: 300px; }
+#a4 { top:800px; left:200px; width:600px; height:400px; }
+#bagno { top:820px; left:900px; width:300px; height:250px; }
+#presidenza { top:820px; left:1300px; width:700px; height:350px; }
 
-/* ===== OVERLAY ===== */
-
-#overlay {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: black;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.5s ease;
-}
-
-.hidden {
-    display: none;
-}
 </style>
 </head>
 
@@ -102,46 +77,61 @@ body {
 <div id="camera">
     <div id="map">
 
-        <div id="a1" class="room" data-room="a1">A1</div>
-        <div id="a2" class="room" data-room="a2">A2</div>
-        <div id="a3" class="room" data-room="a3">A3</div>
+        <div id="a1" class="room">A1</div>
+        <div id="a2" class="room">A2</div>
+        <div id="a3" class="room">A3</div>
 
-        <div id="corridor"></div>
+        <div id="corr1"></div>
 
-        <div id="a4" class="room" data-room="a4">A4</div>
-        <div id="bagno" class="room" data-room="bagno">WC</div>
-        <div id="presidenza" class="room" data-room="presidenza">PR</div>
+        <div id="a4" class="room">A4</div>
+        <div id="bagno" class="room">WC</div>
+        <div id="presidenza" class="room">PR</div>
 
     </div>
-
-    <div id="overlay"></div>
 </div>
 
 <script>
 const map = document.getElementById("map");
-const overlay = document.getElementById("overlay");
+const camera = document.getElementById("camera");
 
-document.querySelectorAll(".room").forEach(room => {
-    room.addEventListener("click", () => enterRoom(room));
+let scale = 1;
+let pos = { x: -500, y: -300 };
+let isDragging = false;
+let start = { x:0, y:0 };
+
+updateTransform();
+
+/* DRAG */
+camera.addEventListener("mousedown", e => {
+    isDragging = true;
+    start.x = e.clientX - pos.x;
+    start.y = e.clientY - pos.y;
+    camera.style.cursor = "grabbing";
 });
 
-function enterRoom(room) {
+window.addEventListener("mouseup", () => {
+    isDragging = false;
+    camera.style.cursor = "grab";
+});
 
-    const rect = room.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+window.addEventListener("mousemove", e => {
+    if (!isDragging) return;
+    pos.x = e.clientX - start.x;
+    pos.y = e.clientY - start.y;
+    updateTransform();
+});
 
-    const offsetX = window.innerWidth / 2 - centerX;
-    const offsetY = window.innerHeight / 2 - centerY;
+/* ZOOM */
+camera.addEventListener("wheel", e => {
+    e.preventDefault();
+    const zoom = e.deltaY < 0 ? 1.1 : 0.9;
+    scale *= zoom;
+    scale = Math.min(Math.max(scale, 0.4), 2.5);
+    updateTransform();
+});
 
-    map.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(1.5)`;
-
-    overlay.style.opacity = 1;
-
-    setTimeout(() => {
-        alert("Entrato in " + room.dataset.room);
-        overlay.style.opacity = 0;
-    }, 800);
+function updateTransform() {
+    map.style.transform = `translate(${pos.x}px, ${pos.y}px) scale(${scale})`;
 }
 </script>
 
